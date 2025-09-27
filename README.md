@@ -85,7 +85,7 @@ Melhorias sugeridas:
 
 ## Licença
 
-Este projeto está licenciado sob a **GNU General Public License v3.0 (GPLv3)**.  
+Este projeto está licenciado sob a [**GNU General Public License v3.0 (GPLv3)**](LICENSE).  
 Você pode redistribuir e/ou modificar o código sob os termos da GPLv3.  
 
 Para mais informações, consulte: [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)
