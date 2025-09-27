@@ -64,6 +64,11 @@ Melhorias sugeridas:
 
 ## Changelog
 
+### v1.0.1 – 26/09/2025
+- Correção de problemas ao tentar tocar arquivos inexistentes ou inacessíveis.
+- Mensagens de log mais claras para fontes e arquivos não encontrados.
+- Pequenas otimizações no carregamento da playlist e no shuffle contínuo.
+
 ### v1.0 – 26/09/2025
 - Primeira versão funcional.
 - Suporta MP3, MP4, WAV.

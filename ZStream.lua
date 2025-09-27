@@ -1,19 +1,19 @@
 obs           = obslua
 authors       = "Zer0G0ld"
-version       = "1.0"
+version       = "1.0.1"
 source_name   = "<Nome da Fonte>"
 playlist      = {}
 current_index = 1
 shuffle       = true
 now_playing   = "now_playing.txt"
 
--- Descrição
+-- Descrição do script
 function script_description()
     return "Playlist automática para rádio 24h no OBS\n" ..
             "Suporta MP3/MP4/WAV, loop infinito, shuffle e arquivo 'Tocando agora'."
 end
 
--- Configurações do script
+-- Propriedades do script
 function script_properties()
     local props = obs.obs_properties_create()
     obs.obs_properties_add_path(props, "folder", "Pasta da Playlist",
@@ -54,14 +54,15 @@ function script_update(settings)
     end
 
     obs.script_log(obs.LOG_INFO, "Carregados " .. tostring(#playlist) .. " arquivos na playlist.")
+
     if #playlist > 0 then
-        next_file_safe()
+        play_next()
     else
         obs.script_log(obs.LOG_WARNING, "Nenhum arquivo de mídia encontrado na pasta!")
     end
 end
 
--- Função para tocar arquivo (segura)
+-- Toca arquivo seguro
 function play_file_safe(file)
     if not file or not io.open(file, "r") then
         obs.script_log(obs.LOG_WARNING, "Arquivo não encontrado: " .. tostring(file))
@@ -71,12 +72,6 @@ function play_file_safe(file)
     local source = obs.obs_get_source_by_name(source_name)
     if source == nil then
         obs.script_log(obs.LOG_WARNING, "Fonte '" .. source_name .. "' não encontrada!")
-        return
-    end
-
-    if not obs.obs_source_active(source) then
-        obs.script_log(obs.LOG_INFO, "Fonte inativa, ignorando atualização.")
-        obs.obs_source_release(source)
         return
     end
 
@@ -90,19 +85,18 @@ function play_file_safe(file)
     obs.script_log(obs.LOG_INFO, "Tocando agora: " .. (file:match("([^/\\]+)$") or file))
 end
 
-
--- Escreve no arquivo TXT "Tocando agora"
+-- Atualiza o TXT "Tocando agora"
 function write_now_playing(file)
     local f = io.open(now_playing, "w")
-    if f ~= nil then
+    if f then
         local name = file:match("([^/\\]+)$")
         f:write("Tocando agora: " .. name .. "\n")
         f:close()
     end
 end
 
--- Próxima música com shuffle contínuo
-function next_file_safe()
+-- Pega próximo arquivo da playlist
+function play_next()
     current_index = current_index + 1
     if current_index > #playlist then
         current_index = 1
@@ -117,31 +111,23 @@ function next_file_safe()
     play_file_safe(playlist[current_index])
 end
 
--- Detecta fim de mídia (via eventos do OBS)
+-- Evento: detecta fim de mídia
 function on_event(event, data)
     if event == obs.OBS_FRONTEND_EVENT_STREAMING_STOPPING then
-        obs.timer_remove(check_media)
+        obs.script_log(obs.LOG_INFO, "Streaming parado, removendo callback.")
     end
 end
 
--- Timer de checagem (fallback simples)
-local counter = 0
-function check_media()
-    counter = counter + 1
-    if counter % 180 == 0 then
-        next_file_safe()
-    end
-end
-
--- Carrega script
+-- Carrega o script
 function script_load(settings)
-    obs.timer_add(check_media, 1000)
     obs.obs_frontend_add_event_callback(on_event)
+    obs.script_log(obs.LOG_INFO, "Script de playlist carregado.")
 end
--- Descarrega script
+
+-- Descarrega o script
 function script_unload()
-    obs.timer_remove(check_media)
     obs.obs_frontend_remove_event_callback(on_event)
+    obs.script_log(obs.LOG_INFO, "Script de playlist descarregado.")
 end
 
 -- Salva configurações
