@@ -63,21 +63,33 @@ end
 
 -- Função para tocar arquivo (segura)
 function play_file_safe(file)
-    if not file then return end
-    local source = obs.obs_get_source_by_name(source_name)
-    if source ~= nil then
-        local settings = obs.obs_source_get_settings(source)
-        local safe_file = file:gsub("\\", "/"):gsub("['\"]", "")
-        obs.obs_data_set_string(settings, "local_file", safe_file)
-        obs.obs_source_update(source, settings)
-        obs.obs_data_release(settings)
-        obs.obs_source_release(source)
-        write_now_playing(file)
-        obs.script_log(obs.LOG_INFO, "Tocando agora: " .. (file:match("([^/\\]+)$") or file))
-    else
-        obs.script_log(obs.LOG_WARNING, "Fonte '" .. source_name .. "' não encontrada!")
+    if not file or not io.open(file, "r") then
+        obs.script_log(obs.LOG_WARNING, "Arquivo não encontrado: " .. tostring(file))
+        return
     end
+
+    local source = obs.obs_get_source_by_name(source_name)
+    if source == nil then
+        obs.script_log(obs.LOG_WARNING, "Fonte '" .. source_name .. "' não encontrada!")
+        return
+    end
+
+    if not obs.obs_source_active(source) then
+        obs.script_log(obs.LOG_INFO, "Fonte inativa, ignorando atualização.")
+        obs.obs_source_release(source)
+        return
+    end
+
+    local settings = obs.obs_source_get_settings(source)
+    obs.obs_data_set_string(settings, "local_file", file)
+    obs.obs_source_update(source, settings)
+    obs.obs_data_release(settings)
+    obs.obs_source_release(source)
+
+    write_now_playing(file)
+    obs.script_log(obs.LOG_INFO, "Tocando agora: " .. (file:match("([^/\\]+)$") or file))
 end
+
 
 -- Escreve no arquivo TXT "Tocando agora"
 function write_now_playing(file)
@@ -102,7 +114,7 @@ function next_file_safe()
             end
         end
     end
-    obs.timer_add(function() play_file_safe(playlist[current_index]) end, 50)
+    play_file_safe(playlist[current_index])
 end
 
 -- Detecta fim de mídia (via eventos do OBS)
